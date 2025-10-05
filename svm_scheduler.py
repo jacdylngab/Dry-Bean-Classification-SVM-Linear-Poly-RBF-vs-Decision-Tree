@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from pathlib import Path
 from itertools import product
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import StandardScaler
@@ -59,6 +60,25 @@ X_test_s = scaler.transform(X_test)
 def report_line(tag, acc, f1m, f1w):
     print(f"{tag:<30} | ACC: {acc:.3f} | F1-macro: {f1m:.3f} | F1-weighted: {f1w:.3f}")
 
+def saving_results(CV="None", SVM = "None", C=None, degree=None, gamma=None, coeff0=None):
+    filename = Path("Best_Hyperparameters.csv")
+
+    data = {
+        "Cross Validation" : [CV],
+        "SVM" : [SVM],
+        "C" : [C],
+        "degree" : [degree],
+        "gamma" : [gamma],
+        "coef0" : [coeff0] 
+    }
+
+    df_new = pd.DataFrame(data)
+
+    if filename.exists():
+        df_new.to_csv(filename, index=False, mode='a', header=False)
+    else:
+        df_new.to_csv(filename, index=False, mode='w', header=True)
+
 """
 I learned about GridSearchCV
 GriSearchCV is pretty much like choosing hyperparameters like C, alpha, or Gamma manually through a for loop
@@ -81,7 +101,6 @@ Iteration	Training folds	        Test fold
 
 Each fold gets used once as test, and 4 times as part of training.
 """
-'''
 ###############################################################
 ################## 5)  Linear SVM Schedule  ###################
 ###############################################################
@@ -126,6 +145,7 @@ report_line(tag, acc, f1m, f1w)
 # Best parameters and score
 print("Best F1-Macro score:", linear_clf_grid.best_score_)
 print(f"Best Linear by F1-macro: {linear_clf_grid.best_params_['C']}")
+saving_results(CV="GridSearchCV", SVM="Linear", C=linear_clf_grid.best_params_['C'])
 
 """
 lin_Cs = [0.01, 0.1, 0.3, 1, 3, 10, 30, 60, 100]
@@ -143,7 +163,11 @@ for C in lin_Cs:
     if f1m > best_lin[1]:
         best_lin = (tag, f1m)
 print(f"Best Linear by F1-macro: {best_lin[0]}")
+saving_results(CV="Manually", SVM= "Linear", C=best_lin[0])
 """
+
+
+
 
 ###############################################################
 ################### 6)  RBF SVM Schedule  #####################
@@ -186,6 +210,7 @@ report_line(tag, acc, f1m, f1w)
 # Best parameters and score
 print("Best F1-Macro score:", rbf_clf_grid.best_score_)
 print(f"Best RBF by F1-macro: C={rbf_clf_grid.best_params_['C']}, gamma={rbf_clf_grid.best_params_['gamma']}")
+saving_results(CV="GridSearchCV", SVM="RBF", C=rbf_clf_grid.best_params_['C'], gamma=rbf_clf_grid.best_params_['gamma'])
 
 """
 rbf_Cs     = [0.01, 0.1, 0.3, 1, 3, 10, 30, 60, 100]
@@ -205,8 +230,8 @@ for C, gamma in product(rbf_Cs, rbf_gammas):
     if f1m > best_rbf[1]:
         best_rbf = (tag, f1m)
 print(f"Best RBF by F1-macro: {best_rbf[0]}")
+saving_results(CV="Manually", SVM="RBF", C=best_rbf[0], gamma=best_rbf[0])
 """
-'''
 ###############################################################
 ################ 7)  Polynomial SVM Schedule  #################
 ###############################################################
@@ -250,6 +275,7 @@ report_line(tag, acc, f1m, f1w)
 # Best parameters and score
 print("Best F1-Macro score:", poly_clf_grid.best_score_)
 print(f"Best Poly by F1-macro: C={poly_clf_grid.best_params_['C']}, degree={poly_clf_grid.best_params_['degree']}, gamma={poly_clf_grid.best_params_['gamma']}, coef0={poly_clf_grid.best_params_['coef0']}")
+saving_results(CV="GridSearchCV", SVM="Poly", C=poly_clf_grid.best_params_['C'], degree=poly_clf_grid.best_params_['degree'], gamma=poly_clf_grid.best_params_['gamma'], coeff0=poly_clf_grid.best_params_['coef0'])
 
 '''
 poly_Cs     = [0.01, 0.1, 0.3, 1, 3, 10, 30, 60, 100]
@@ -271,4 +297,5 @@ for C, degree, gamma, coef0 in product(poly_Cs, poly_degs, poly_gammas, poly_coe
     if f1m > best_poly[1]:
         best_poly = (tag, f1m)
 print(f"Best Poly by F1-macro: {best_poly[0]}")
+saving_results(CV="Manually", SVM="Poly", C=best_poly[0], degree=best_poly[0], gamma=best_poly[0], coeff0=best_poly[0])
 '''
