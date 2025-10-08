@@ -18,14 +18,26 @@ df = pd.read_csv("Dry_Bean_Dataset.csv")
 ###############################################################
 
 # Transform the categorical class column into numerical digits
-encoder = LabelEncoder()
-y = encoder.fit_transform(df["Class"])
+
+classes = {
+    "SEKER"    : 1,
+    "BARBUNYA" : 2, 
+    "BOMBAY"   : 3, 
+    "CALI"     : 4, 
+    "HOROZ"    : 5,   
+    "SIRA"     : 6,
+    "DERMASON" : 7
+}
+
+df["Class_num"] = df["Class"].map(classes)
+
 
 ###############################################################
 #################### 3)  Train/test split  ####################
 ###############################################################
 
-X = df.drop(columns=["Class"]).to_numpy()
+X = df.drop(columns=["Class", "Class_num"]).to_numpy()
+y = df["Class_num"].to_numpy()
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, stratify=y, random_state=42
@@ -44,7 +56,7 @@ def report_line(tag, acc, f1m, f1w):
     print(f"{tag:<30} | ACC: {acc:.3f} | F1-macro: {f1m:.3f} | F1-weighted: {f1w:.3f}")
 
 def saving_results(CV="None", SVM = "None", C=None, degree=None, gamma=None, coeff0=None):
-    filename = Path("Best_Hyperparameters.csv")
+    filename = Path("Best_Hyperparameters_Manual.csv")
 
     data = {
         "Cross Validation" : [CV],
