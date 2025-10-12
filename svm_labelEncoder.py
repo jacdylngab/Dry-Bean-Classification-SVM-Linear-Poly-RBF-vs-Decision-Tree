@@ -14,7 +14,7 @@ def report_line(tag, acc, f1m, f1w):
     print(f"{tag} | ACC: {acc:.3f} | F1-macro: {f1m:.3f} | F1-weighted: {f1w:.3f}")
 
 def saving_results(Model="None", Macro_F1=None, Accuracy=None):
-    filename = Path("Results.csv")
+    filename = Path("Results_labelEncoder.csv")
 
     data = {
         "Model" : [Model],
@@ -68,9 +68,10 @@ X_test_s = scaler.transform(X_test)
 
 print("\n=== Linear SVM ===")
 # Create a Linear SVM classifier
-C = 30
+#C = 30
 #C = 10
 #C = 60
+C = 20000000000
 linear_svm_model = LinearSVC(C=C, max_iter=20000, random_state=42)
 
 # Fit on the training data
@@ -98,7 +99,8 @@ saving_results(Model=best_param, Macro_F1=f1m, Accuracy=acc)
 
 print("\n=== RBF SVM ===")
 # Define the SVM model
-C = 30
+#C = 30
+C = 4
 gamma = "scale"
 rbf_svm_model = SVC(kernel="rbf", C=C, gamma=gamma)
 #rbf_svm_model = SVC(kernel="rbf", C=60, gamma=0.01)
@@ -131,8 +133,8 @@ saving_results(Model=best_param, Macro_F1=f1m, Accuracy=acc)
 
 print("\n=== Polynomial SVM ===")
 # Define the SVM model
-C = 3
-degree = 3
+C = 40
+degree = 2
 gamma = "scale"
 coef0 = 1
 poly_svm_model = SVC(kernel="poly", C=C, degree=degree, gamma=gamma, coef0=coef0)

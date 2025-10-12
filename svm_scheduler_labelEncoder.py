@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from itertools import product
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.model_selection import train_test_split, GridSearchCV, RepeatedStratifiedKFold
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.svm import LinearSVC, SVC
 from sklearn.metrics import accuracy_score, f1_score
@@ -40,11 +40,15 @@ scaler.fit(X_train)
 X_train_s = scaler.transform(X_train)
 X_test_s = scaler.transform(X_test)
 
+###############################################################
+#################### 5)  Helper Function  #####################
+###############################################################
+
 def report_line(tag, acc, f1m, f1w):
     print(f"{tag:<30} | ACC: {acc:.3f} | F1-macro: {f1m:.3f} | F1-weighted: {f1w:.3f}")
 
 def saving_results(CV="None", SVM = "None", C=None, degree=None, gamma=None, coeff0=None):
-    filename = Path("Best_Hyperparameters.csv")
+    filename = Path("Best_SVM_Hyperparameters_LabelEncoder.csv")
 
     data = {
         "Cross Validation" : [CV],
@@ -83,36 +87,43 @@ Iteration	Training folds	        Test fold
 5	        Fold 1, 2, 3, 4	        Fold 5
 
 Each fold gets used once as test, and 4 times as part of training.
+GridSearchCV is also better than a for loop because it gives you the ability to do parallelization (n_jobs=-1) i.e use all your cores where as with a for loop you only use one core.
+This helps speed up the hyperparameter tuning.
 """
+
 ###############################################################
-################## 5)  Linear SVM Schedule  ###################
+############# 6)  K-fold Stratified Cross Validation  #########
+###############################################################
+
+# k-fold cross-validation on the Training set only
+#cross_validation = StratifiedKFold(n_splits=5, shuffle=True, random_state=42) 
+
+cross_validation = RepeatedStratifiedKFold(n_splits=5, n_repeats=3, random_state=42)
+###############################################################
+################## 7)  Linear SVM Schedule  ###################
 ###############################################################
 print("\n=== Linear SVM schedule ===")
 
 # Define the linear svm parameter grid
 linear_param_grid = {
-    'C' : [0.01, 0.1, 0.3, 1, 3, 10, 30, 60, 100],
+    #'C' : [0.01, 0.1, 0.3, 1, 3, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+    'C' : [100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 20000000000],
     'max_iter' : [20000],
     'dual': [False]
 }
+
 
 # Create Linear SVM GridSearchCV object
 linear_clf_grid = GridSearchCV(
     LinearSVC(random_state=42),
     linear_param_grid,
     scoring='f1_macro',         # Prefer Macro-F1 for evaluation since the dataset is imbalanced.
-    cv=5,                       # 5-fold cross validation
+    cv=cross_validation,        # cross validation
     verbose=1                   # show progress
 )
 
 # Fit on the training data
 linear_clf_grid.fit(X_train_s, y_train)
-
-# Convert cv_results_ to a DataFrame for easy viewing
-#results = pd.DataFrame(linear_clf_grid.cv_results_)
-
-# Show relevant columns
-#print(results[['param_C', 'mean_test_score', 'std_test_score', 'rank_test_score']])
 
 # Predict on the test set using the best estimator
 # The best estimator is the actual trained model (estimator) that achieved the best score on cross-validation for the hyperparameter combination that was specified.
@@ -126,41 +137,20 @@ f1w = f1_score(y_test, pred, average="weighted")
 tag = "Linear SVM (GridSearchCV best)"
 report_line(tag, acc, f1m, f1w)
 # Best parameters and score
-print("Best F1-Macro score:", linear_clf_grid.best_score_)
-print(f"Best Linear by F1-macro: {linear_clf_grid.best_params_['C']}")
+print("Mean cross-validated score of the best_estimator:", linear_clf_grid.best_score_)
+print(f"Best Linear params: {linear_clf_grid.best_params_['C']}")
 saving_results(CV="GridSearchCV", SVM="Linear", C=linear_clf_grid.best_params_['C'])
 
-"""
-lin_Cs = [0.01, 0.1, 0.3, 1, 3, 10, 30, 60, 100]
-print("\n=== Linear SVM schedule ===")
-best_lin = (None, -1.0)
-for C in lin_Cs:
-    lin_clf = LinearSVC(C=C, max_iter=20000, random_state=42)  # add dual=False if you like
-    lin_clf.fit(X_train_s, y_train)
-    pred = lin_clf.predict(X_test_s)
-    acc = accuracy_score(y_test, pred)
-    f1m = f1_score(y_test, pred, average="macro")
-    f1w = f1_score(y_test, pred, average="weighted")
-    tag = f"Linear C={C:g}"
-    report_line(tag, acc, f1m, f1w)
-    if f1m > best_lin[1]:
-        best_lin = (tag, f1m)
-print(f"Best Linear by F1-macro: {best_lin[0]}")
-saving_results(CV="Manually", SVM= "Linear", C=best_lin[0])
-"""
-
-
-
-
 ###############################################################
-################### 6)  RBF SVM Schedule  #####################
+################### 8)  RBF SVM Schedule  #####################
 ###############################################################
 
 print("\n=== RBF SVM schedule ===")
 # Define the rbf svm parameter grid
 rbf_param_grid = {
-    'C' : [0.01, 0.1, 0.3, 1, 3, 10, 30, 60, 100],
-    'gamma' : ["scale", 0.001, 0.01, 0.1, 1, 10]
+    #'C' : [0.01, 0.1, 0.3, 1, 3, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+    'C' : [4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5],
+    'gamma' : ["scale"]
 }
 
 # Define the SVM model
@@ -171,8 +161,8 @@ rbf_clf_grid = GridSearchCV(
     estimator=rbf_svc,
     param_grid=rbf_param_grid,
     scoring='f1_macro',         # Prefer Macro-F1 for evaluation since the dataset is imbalanced.
-    cv=5,                       # 5-fold cross validation
-    n_jobs=-1,                   # use all CPU cores
+    cv=cross_validation,        # cross validation
+    n_jobs=-1,                  # use all CPU cores
     verbose=2                   # show progress
 )
 
@@ -191,39 +181,20 @@ f1w = f1_score(y_test, pred, average="weighted")
 tag = "RBF SVM (GridSearchCV best)"
 report_line(tag, acc, f1m, f1w)
 # Best parameters and score
-print("Best F1-Macro score:", rbf_clf_grid.best_score_)
-print(f"Best RBF by F1-macro: C={rbf_clf_grid.best_params_['C']}, gamma={rbf_clf_grid.best_params_['gamma']}")
+print("Mean cross-validated score of the best_estimator:", rbf_clf_grid.best_score_)
+print(f"Best RBF params: C={rbf_clf_grid.best_params_['C']}, gamma={rbf_clf_grid.best_params_['gamma']}")
 saving_results(CV="GridSearchCV", SVM="RBF", C=rbf_clf_grid.best_params_['C'], gamma=rbf_clf_grid.best_params_['gamma'])
 
-"""
-rbf_Cs     = [0.01, 0.1, 0.3, 1, 3, 10, 30, 60, 100]
-rbf_gammas =  ["scale", 0.001, 0.01, 0.1, 1, 10]
-
-print("\n=== RBF SVM schedule ===")
-best_rbf = (None, -1.0)
-for C, gamma in product(rbf_Cs, rbf_gammas):
-    clf = SVC(kernel="rbf", C=C, gamma=gamma)
-    clf.fit(X_train_s, y_train)
-    pred = clf.predict(X_test_s)
-    acc = accuracy_score(y_test, pred)
-    f1m = f1_score(y_test, pred, average="macro")
-    f1w = f1_score(y_test, pred, average="weighted")
-    tag = f"RBF C={C:g}, γ={gamma}"
-    report_line(tag, acc, f1m, f1w)
-    if f1m > best_rbf[1]:
-        best_rbf = (tag, f1m)
-print(f"Best RBF by F1-macro: {best_rbf[0]}")
-saving_results(CV="Manually", SVM="RBF", C=best_rbf[0], gamma=best_rbf[0])
-"""
 ###############################################################
-################ 7)  Polynomial SVM Schedule  #################
+################ 9)  Polynomial SVM Schedule  #################
 ###############################################################
 
 print("\n=== Polynomoal SVM schedule ===")
 # Define the poly svm parameter grid
 poly_param_grid = {
-    'C' : [0.01, 0.1, 0.3, 1, 3, 10, 30, 60, 100],
-    'degree' : [2, 3],
+    #'C' : [0.01, 0.1, 0.3, 1, 3, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+    'C' : [40, 41, 42, 43, 44, 45, 46, 47, 48, 49],
+    'degree' : [2, 3, 4, 5, 6, 7, 8, 9, 10],
     #'gamma' :  ["scale", 0.001, 0.01, 0.1, 1, 10],
     'gamma' :  ["scale"],
     'coef0' : [0, 1]
@@ -237,8 +208,8 @@ poly_clf_grid = GridSearchCV(
     estimator=poly_svc,
     param_grid=poly_param_grid,
     scoring='f1_macro',         # Prefer Macro-F1 for evaluation since the dataset is imbalanced.
-    cv=5,                       # 5-fold cross validation
-    n_jobs=-1,                   # use all CPU cores
+    cv=cross_validation,        # cross validation
+    n_jobs=-1,                  # use all CPU cores
     verbose=2                   # show progress
 )
 
@@ -257,29 +228,6 @@ f1w = f1_score(y_test, pred, average="weighted")
 tag = "Poly SVM (GridSearchCV best)"
 report_line(tag, acc, f1m, f1w)
 # Best parameters and score
-print("Best F1-Macro score:", poly_clf_grid.best_score_)
-print(f"Best Poly by F1-macro: C={poly_clf_grid.best_params_['C']}, degree={poly_clf_grid.best_params_['degree']}, gamma={poly_clf_grid.best_params_['gamma']}, coef0={poly_clf_grid.best_params_['coef0']}")
+print("Mean cross-validated score of the best_estimator:", poly_clf_grid.best_score_)
+print(f"Best Poly params: C={poly_clf_grid.best_params_['C']}, degree={poly_clf_grid.best_params_['degree']}, gamma={poly_clf_grid.best_params_['gamma']}, coef0={poly_clf_grid.best_params_['coef0']}")
 saving_results(CV="GridSearchCV", SVM="Poly", C=poly_clf_grid.best_params_['C'], degree=poly_clf_grid.best_params_['degree'], gamma=poly_clf_grid.best_params_['gamma'], coeff0=poly_clf_grid.best_params_['coef0'])
-
-'''
-poly_Cs     = [0.01, 0.1, 0.3, 1, 3, 10, 30, 60, 100]
-poly_degs   = [2, 3]
-poly_gammas =  ["scale", 0.001, 0.01, 0.1, 1, 10]
-poly_coef0s = [0, 1]
-
-print("\n=== Polynomial SVM schedule ===")
-best_poly = (None, -1.0)
-for C, degree, gamma, coef0 in product(poly_Cs, poly_degs, poly_gammas, poly_coef0s):
-    clf = SVC(kernel="poly", C=C, degree=degree, gamma=gamma, coef0=coef0)
-    clf.fit(X_train_s, y_train)
-    pred = clf.predict(X_test_s)
-    acc = accuracy_score(y_test, pred)
-    f1m = f1_score(y_test, pred, average="macro")
-    f1w = f1_score(y_test, pred, average="weighted")
-    tag = f"Poly C={C:g}, d={degree}, γ={gamma}, c0={coef0}"
-    report_line(tag, acc, f1m, f1w)
-    if f1m > best_poly[1]:
-        best_poly = (tag, f1m)
-print(f"Best Poly by F1-macro: {best_poly[0]}")
-saving_results(CV="Manually", SVM="Poly", C=best_poly[0], degree=best_poly[0], gamma=best_poly[0], coeff0=best_poly[0])
-'''

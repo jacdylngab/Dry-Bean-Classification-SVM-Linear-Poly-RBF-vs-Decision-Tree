@@ -1,0 +1,3 @@
+criterion,max_depth,max_leaf_nodes,min_samples_split,ccp_alpha
+gini,,,2,0.0005
+gini,,,9,0.0004

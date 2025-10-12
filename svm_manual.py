@@ -1,10 +1,11 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from pathlib import Path
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.svm import LinearSVC, SVC
-from sklearn.metrics import accuracy_score, f1_score, confusion_matrix, classification_report
+from sklearn.metrics import accuracy_score, f1_score, confusion_matrix, classification_report, ConfusionMatrixDisplay
 
 ###############################################################
 ####################### Helper Functions  #####################
@@ -14,7 +15,7 @@ def report_line(tag, acc, f1m, f1w):
     print(f"{tag} | ACC: {acc:.3f} | F1-macro: {f1m:.3f} | F1-weighted: {f1w:.3f}")
 
 def saving_results(Model="None", Macro_F1=None, Accuracy=None):
-    filename = Path("Results_Manual.csv")
+    filename = Path("Results.csv")
 
     data = {
         "Model" : [Model],
@@ -28,6 +29,23 @@ def saving_results(Model="None", Macro_F1=None, Accuracy=None):
         df_new.to_csv(filename, index=False, mode='a', header=False)
     else:
         df_new.to_csv(filename, index=False, mode='w', header=True)
+
+def displayingTheConfusionMatrix(y_pred, y_test, name, classes):
+    # Reverse mapping
+    rev_classes = {value : key for key, value in classes.items()}
+
+    # Create ordered label list
+    label_names = [rev_classes[i] for i in sorted(rev_classes.keys())]
+
+    cm = confusion_matrix(y_test, y_pred)
+    print(cm)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=label_names)
+    disp.plot(cmap="Blues")
+    plt.title(f"Confusion Matrix - {name}")
+    plt.tight_layout()
+    saving_name = f"{name}.png"
+    plt.savefig(saving_name)
+    plt.show()
 
 ###############################################################
 ################ 1) Load the Dry Bean Dataset #################
@@ -72,7 +90,6 @@ scaler = StandardScaler()
 scaler.fit(X_train)
 X_train_s = scaler.transform(X_train)
 X_test_s = scaler.transform(X_test)
-
 ###############################################################
 ######################## 5)  Linear SVM  ######################
 ###############################################################
@@ -81,7 +98,10 @@ print("\n=== Linear SVM ===")
 # Create a Linear SVM classifier
 #C = 30
 #C = 10
-C = 60
+#C = 60
+#C = 70
+#C = 80
+C = 86
 linear_svm_model = LinearSVC(C=C, max_iter=20000, random_state=42)
 
 # Fit on the training data
@@ -92,7 +112,8 @@ y_pred = linear_svm_model.predict(X_test_s)
 
 # Evaluate on the test set
 print("Confusion Matrix (TEST):")
-print(confusion_matrix(y_test, y_pred))
+#print(confusion_matrix(y_test, y_pred))
+displayingTheConfusionMatrix(y_test=y_test, y_pred=y_pred, name="Linear SVM", classes=classes)
 print("\nClassification Report (TEST):")
 print(classification_report(y_test, y_pred, digits=3))
 
@@ -109,13 +130,15 @@ saving_results(Model=best_param, Macro_F1=f1m, Accuracy=acc)
 
 print("\n=== RBF SVM ===")
 # Define the SVM model
-C = 10
+#C = 10
+C = 16
 gamma = "scale"
 rbf_svm_model = SVC(kernel="rbf", C=C, gamma=gamma)
 #rbf_svm_model = SVC(kernel="rbf", C=60, gamma=0.01)
 #rbf_svm_model = SVC(kernel="rbf", C=10, gamma=0.01)
 #rbf_svm_model = SVC(kernel="rbf", C=10, gamma="scale")
 #rbf_svm_model = SVC(kernel="rbf", C=30, gamma="scale")
+#rbf_svm_model = SVC(kernel="rbf", C=70, gamma="scale")
 
 # Fit on the training data
 rbf_svm_model.fit(X_train_s, y_train)
@@ -125,7 +148,8 @@ y_pred = rbf_svm_model.predict(X_test_s)
 
 # Evaluate on the test set
 print("Confusion Matrix (TEST):")
-print(confusion_matrix(y_test, y_pred))
+#print(confusion_matrix(y_test, y_pred))
+displayingTheConfusionMatrix(y_test=y_test, y_pred=y_pred, name="RBF SVM", classes=classes)
 print("\nClassification Report (TEST):")
 print(classification_report(y_test, y_pred, digits=3))
 
@@ -135,14 +159,13 @@ f1w = f1_score(y_test, y_pred, average="weighted")
 best_param = f"SVM (RBF) C={C}, gamma={gamma}"
 report_line(tag=best_param, acc=acc, f1m=f1m, f1w=f1w)
 saving_results(Model=best_param, Macro_F1=f1m, Accuracy=acc)
-
 ###############################################################
 ################ 7)  Polynomial SVM Schedule  #################
 ###############################################################
 
 print("\n=== Polynomial SVM ===")
 # Define the SVM model
-C = 1
+C = 3
 degree = 3
 gamma = "scale"
 coef0 = 1
@@ -164,7 +187,8 @@ y_pred = poly_svm_model.predict(X_test_s)
 
 # Evaluate on the test set
 print("Confusion Matrix (TEST):")
-print(confusion_matrix(y_test, y_pred))
+#print(confusion_matrix(y_test, y_pred))
+displayingTheConfusionMatrix(y_test=y_test, y_pred=y_pred, name="Polynomial SVM", classes=classes)
 print("\nClassification Report (TEST):")
 print(classification_report(y_test, y_pred, digits=3))
 
