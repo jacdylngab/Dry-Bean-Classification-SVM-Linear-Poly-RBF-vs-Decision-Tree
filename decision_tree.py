@@ -65,9 +65,9 @@ def displayingTheConfusionMatrix(y_pred, y_test_or_train, model, t):
 
 # Best parameters found
 max_depth = None
-max_leaf_nodes = None 
-min_samples_split = 9
-ccp_alpha = 0.0004
+max_leaf_nodes = None
+min_samples_split = 2
+ccp_alpha = 0.00041
 
 decision_tree_clf = DecisionTreeClassifier(max_depth=max_depth, max_leaf_nodes=max_leaf_nodes, min_samples_split=min_samples_split, ccp_alpha=ccp_alpha, random_state=42)
 
