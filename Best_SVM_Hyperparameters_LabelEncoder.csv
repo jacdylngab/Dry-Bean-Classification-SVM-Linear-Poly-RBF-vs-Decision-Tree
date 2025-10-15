@@ -1,7 +1,0 @@
-Cross Validation,SVM,C,degree,gamma,coef0
-GridSearchCV,Linear,100,,,
-GridSearchCV,RBF,3,,scale,
-GridSearchCV,Poly,40,2,scale,1
-GridSearchCV,Linear,20000000000,,,
-GridSearchCV,RBF,4,,scale,
-GridSearchCV,Poly,40,2,scale,1

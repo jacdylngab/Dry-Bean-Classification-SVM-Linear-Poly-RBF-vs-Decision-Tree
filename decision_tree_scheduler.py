@@ -1,10 +1,14 @@
-import numpy as np
+# The goal of this script is to find the best hyperparameters for the Decision Tree Classifier Model
+# It takes in a CSV file and trains a Decision Tree Classifier model based on the best hyperparameters found
+#
+# The workflow includes:
+#   - Loading and transforming the dataset
+#   - Splitting the dataset into training and testing sets
+#   - Performing GridSearchCV and RepeatedStratifiedKFold to find the best hyperparameters
+
 import pandas as pd
 from pathlib import Path
-import matplotlib.pyplot as plt
-from itertools import product
-from sklearn.model_selection import train_test_split, GridSearchCV, RepeatedStratifiedKFold, cross_val_score
-from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split, GridSearchCV, RepeatedStratifiedKFold
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, f1_score, confusion_matrix, classification_report
 
@@ -120,72 +124,13 @@ grid_search.fit(X_train, y_train)
 # The best estimator is the actual trained model (estimator) that achieved the best score on cross-validation for the hyperparameter combination that was specified.
 best_clf = grid_search.best_estimator_
 
+# Make predictions on both the train and test set
 yhat_tr = best_clf.predict(X_train)
 yhat_te = best_clf.predict(X_test)
-
-'''
-# 3) Parameter grid
-grid_max_depth       = [None, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-grid_max_leaf_nodes  = [None, 6, 9, 12, 15, 18, 21, 24]
-grid_min_samples_split = [2, 10, 20, 30, 40, 50]
-grid_ccp_alpha       = [0.0, 0.0005, 0.001, 0.01] # light post-pruning
-
-# 4) CV setup (more stable than single 5-fold)
-cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=3, random_state=42)
-
-def combos():
-    # Allow: (A) vary max_depth with max_leaf_nodes=None
-    for max_depth, mss, alpha in product(grid_max_depth, grid_min_samples_split, grid_ccp_alpha):
-        yield {"max_depth": max_depth, "max_leaf_nodes": None,
-               "min_samples_split": mss, "ccp_alpha": alpha}
-    # Allow: (B) vary max_leaf_nodes with max_depth=None
-    for max_leaf_nodes, mss, alpha in product(grid_max_leaf_nodes, grid_min_samples_split, grid_ccp_alpha):
-        yield {"max_depth": None, "max_leaf_nodes": max_leaf_nodes,
-               "min_samples_split": mss, "ccp_alpha": alpha}
-    # Baseline: (C) both unlimited, various mss/alpha
-    for mss, alpha in product(grid_min_samples_split, grid_ccp_alpha):
-        yield {"max_depth": None, "max_leaf_nodes": None,
-               "min_samples_split": mss, "ccp_alpha": alpha}
-
-results = []
-print("=== Repeated 5-fold CV across filtered hyperparameter grid ===")
-for params in combos():
-    clf = DecisionTreeClassifier(random_state=42, **params)
-    scores = cross_val_score(clf, X_train, y_train, cv=cv, scoring="accuracy", n_jobs=None)
-    mean_, std_ = scores.mean(), scores.std()
-    results.append({"params": params, "mean_acc": mean_, "std_acc": std_})
-
-# Prefer higher acc, then simpler model
-def simplicity_key(p):
-    # simpler = shallower depth, fewer leaves limit (prefer having just one limiter), larger min_samples_split, larger ccp_alpha
-    depth_score = 0 if p["max_depth"] is None else p["max_depth"]      # lower better
-    leaf_score  = 0 if p["max_leaf_nodes"] is None else p["max_leaf_nodes"]  # lower better
-    # Penalize if both limiters present (we never allow it, but keep just in case)
-    both_penalty = 1 if (p["max_depth"] is not None and p["max_leaf_nodes"] is not None) else 0
-    return (both_penalty, depth_score, leaf_score, -p["min_samples_split"], -p["ccp_alpha"])
-
-best = max(results, key=lambda r: (r["mean_acc"], -1*(
-    # invert simplicity_key lexicographically for tie-break (smaller is simpler)
-    -simplicity_key(r["params"])[0],
-    -simplicity_key(r["params"])[1],
-    -simplicity_key(r["params"])[2],
-    -simplicity_key(r["params"])[3],
-    -simplicity_key(r["params"])[4]
-)))
-
-print("\n=== Best config by CV accuracy ===")
-print(f"Params: {best['params']}, CV mean acc={best['mean_acc']:.3f} (std={best['std_acc']:.3f})")
-
-# Retrain best on full TRAIN and evaluate
-best_clf = DecisionTreeClassifier(random_state=42, **best["params"])
-best_clf.fit(X_train, y_train)
-
-yhat_tr = best_clf.predict(X_train)
-yhat_te = best_clf.predict(X_test)
-'''
 
 print(f"Best Hyperparameters: criterion={grid_search.best_params_['criterion']}, max_depth={grid_search.best_params_['max_depth']} | max_leaf_nodes={grid_search.best_params_['max_leaf_nodes']} | min_samples_split={grid_search.best_params_['min_samples_split']} | ccp_alpha={grid_search.best_params_["ccp_alpha"]}")
-saving_results(criterion=grid_search.best_params_['criterion'], max_depth=grid_search.best_params_['max_depth'], max_leaf_nodes=grid_search.best_params_['max_leaf_nodes'], min_samples_split=grid_search.best_params_['min_samples_split'], ccp_alpha=grid_search.best_params_["ccp_alpha"])
+# Uncomment this if you want the results to be saved to an external CSV file
+# saving_results(criterion=grid_search.best_params_['criterion'], max_depth=grid_search.best_params_['max_depth'], max_leaf_nodes=grid_search.best_params_['max_leaf_nodes'], min_samples_split=grid_search.best_params_['min_samples_split'], ccp_alpha=grid_search.best_params_["ccp_alpha"])
 
 print("\n=== TRAIN ===")
 print(f"Accuracy: {accuracy_score(y_train, yhat_tr):.3f}")
