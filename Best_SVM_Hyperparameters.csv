@@ -14,3 +14,12 @@ GridSearchCV,Poly,3,3,scale,1
 GridSearchCV,Linear,86,,,
 GridSearchCV,RBF,16,,scale,
 GridSearchCV,Poly,3,3,scale,1
+
+
+
+
+
+
+GridSearchCV,Linear,86.2,,,
+GridSearchCV,RBF,16,,scale,
+GridSearchCV,Poly,3.7,3,scale,1

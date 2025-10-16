@@ -1,12 +1,18 @@
-# This code uses the best hyperparameters found from the svm_scheduler.py script
-# It takes in a CSV file, applies necessary data prepocessing and transformations,
-# and trains a Linear, Polynomial, and RBF SVM model based on the best hyperparameters found
-#
-# The workflow includes:
-#   - Loading and transforming the dataset
-#   - Splitting the dataset into training and testing sets
-#   - Scaling the features for SVM models using the training set only
-#   - Training and evaluating the models: Linear, Polynomial, and RBF SVMs
+"""
+svm.py
+-------
+This script trains three Support Vector Machine (SVM) classifiers
+(Linear, RBF, and Polynomial) using the best hyperparameters previously found
+from `svm_scheduler.py`.
+
+Workflow:
+  1. Convert the Excel sheet into a CSV (if it isn't already in CSV format)
+  2. Load and preprocess the Dry Bean dataset
+  3. Split the data into training and test sets
+  4. Scale features using the training set
+  5. Train and evaluate SVM models
+  6. Display metrics (accuracy, F1-scores, confusion matrices)
+"""
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -16,14 +22,16 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import LinearSVC, SVC
 from sklearn.metrics import accuracy_score, f1_score, confusion_matrix, classification_report, ConfusionMatrixDisplay
 
-###############################################################
-####################### Helper Functions  #####################
-###############################################################
+# ============================================================
+# Helper functions
+# ============================================================
 
 def report_line(tag, acc, f1m, f1w):
+    """Nicely formatted printout of model performance metrics."""
     print(f"{tag} | ACC: {acc:.3f} | F1-macro: {f1m:.3f} | F1-weighted: {f1w:.3f}")
 
 def saving_results(Model="None", Macro_F1_Test=None, Macro_F1_Train=None, Accuracy=None):
+    """Appends model performance results to Results.csv"""
     filename = Path("Results.csv")
 
     data = {
@@ -41,24 +49,29 @@ def saving_results(Model="None", Macro_F1_Test=None, Macro_F1_Train=None, Accura
         df_new.to_csv(filename, index=False, mode='w', header=True)
 
 def displaying_the_confusion_matrix(y_pred, y_test_or_train, name, classes, t):
-    # Reverse mapping
+    """Displays and optionally saves a confusion matrix plot."""
     rev_classes = {value : key for key, value in classes.items()}
-    # Create ordered label list
     label_names = [rev_classes[i] for i in sorted(rev_classes.keys())]
+
     cm = confusion_matrix(y_test_or_train, y_pred)
     plt.figure(figsize=(10, 8))
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=label_names)
     disp.plot(cmap="Blues", ax=plt.gca())
     plt.title(f"Confusion Matrix - {name} ({t})")
     plt.tight_layout()
-    saving_name = f"{name} ({t}).png"
 
     # Uncomment this if you want the plot to be saved
+    #saving_name = f"{name} ({t}).png"
     #plt.savefig(saving_name)
 
     plt.show()
 
-def print_results(y_train, y_test, yhat_tr, yhat_te, name, best_param, classes): 
+def print_results(y_train, y_test, yhat_tr, yhat_te, name, best_param, classes):
+    """
+    Prints full training/testing evaluation results for a model.
+    Includes accuracy, F1 scores, confusion matrices, and classification report.
+    """ 
+    # ----------------------- TRAIN ----------------------
     print("\n=== TRAIN ===")
     print(f"Accuracy: {accuracy_score(y_train, yhat_tr):.3f}")
     print(f"F1 (macro): {f1_score(y_train, yhat_tr, average='macro'):.3f}")
@@ -66,6 +79,7 @@ def print_results(y_train, y_test, yhat_tr, yhat_te, name, best_param, classes):
     print("Confusion matrix:\n", confusion_matrix(y_train, yhat_tr))
     displaying_the_confusion_matrix(y_pred=yhat_tr, y_test_or_train=y_train, name=name, classes=classes, t="TRAIN")
 
+    # ----------------------- TEST ----------------------
     print("\n=== TEST ===")
     print(f"Accuracy: {accuracy_score(y_test, yhat_te):.3f}")
     print(f"F1 (macro): {f1_score(y_test, yhat_te, average='macro'):.3f}")
@@ -82,19 +96,35 @@ def print_results(y_train, y_test, yhat_tr, yhat_te, name, best_param, classes):
     report_line(tag=best_param, acc=acc, f1m=f1m_test, f1w=f1w_test)
 
     # Uncomment this if you want the results to be saved to an external CSV file
-    #saving_results(Model=best_param, Macro_F1_Test=f1m_test, Macro_F1_Train=f1m_train, Accuracy=acc)
+    # saving_results(Model=best_param, Macro_F1_Test=f1m_test, Macro_F1_Train=f1m_train, Accuracy=acc)
 
-###############################################################
-################ 1) Load the Dry Bean Dataset #################
-###############################################################
+
+# ============================================================
+# 1) Excel sheet to CSV
+# ============================================================
+
+# Convert the excel sheet to a CSV if the CSV does not exist
+filename = Path("Dry_Bean_Dataset.csv")
+
+if not filename.exists():
+    # Load Excel file
+    df = pd.read_excel("Dry_Bean_Dataset.xlsx", sheet_name="Dry_Beans_Dataset")
+
+    # Save as CSV
+    df.to_csv("Dry_Bean_Dataset.csv", index=False, encoding="utf-8-sig")
+
+
+# ============================================================
+# 2) Load the Dry Bean Dataset
+# ============================================================
 
 df = pd.read_csv("Dry_Bean_Dataset.csv")
 
-###############################################################
-################## 2) Transform the dataset ###################
-###############################################################
+# ============================================================
+# 3) Encode the categorical class column
+# ============================================================
 
-# Transform the categorical class column into numerical digits
+# Manual mapping of bean types to numeric labels
 classes = {
     "SEKER"    : 1,
     "BARBUNYA" : 2, 
@@ -107,9 +137,9 @@ classes = {
 
 df["Class_num"] = df["Class"].map(classes)
 
-###############################################################
-#################### 3)  Train/test split  ####################
-###############################################################
+# ============================================================
+# 4) Train/test split (80/20 stratified)
+# ============================================================
 
 X = df.drop(columns=["Class", "Class_num"]).to_numpy()
 y = df["Class_num"].to_numpy()
@@ -118,20 +148,20 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, stratify=y, random_state=42
 )
 
-###############################################################
-############## 4)  Scale (fit on train only)  #################
-###############################################################
+# ============================================================
+# 5) Feature scaling (fit on train only)
+# ============================================================
 
 scaler = StandardScaler()
 scaler.fit(X_train)
 X_train_s = scaler.transform(X_train)
 X_test_s = scaler.transform(X_test)
-###############################################################
-######################## 5)  Linear SVM  ######################
-###############################################################
+
+# ============================================================
+# 6) Linear SVM 
+# ============================================================
 
 print("\n=== Linear SVM ===")
-# Create a Linear SVM classifier
 C = 86
 linear_svm_model = LinearSVC(C=C, max_iter=20000, random_state=42)
 
@@ -147,12 +177,11 @@ best_param = f"SVM (Linear) C={C}"
 # Print Results (Confusion Matrix, Classification Report, F1_Scores, Accuracy)
 print_results(y_train=y_train, y_test=y_test, yhat_tr=yhat_tr, yhat_te=yhat_te, name="Linear SVM", classes=classes, best_param=best_param)
 
-###############################################################
-##################### 6)  RBF SVM  ############################
-###############################################################
+# ============================================================
+# 7) RBF SVM 
+# ============================================================
 
 print("\n=== RBF SVM ===")
-# Define the SVM model
 C = 16
 gamma = "scale"
 rbf_svm_model = SVC(kernel="rbf", C=C, gamma=gamma)
@@ -167,12 +196,11 @@ yhat_te = rbf_svm_model.predict(X_test_s)
 best_param = f"SVM (RBF) C={C}, gamma={gamma}"
 print_results(y_train=y_train, y_test=y_test, yhat_tr=yhat_tr, yhat_te=yhat_te, name="RBF SVM", classes=classes, best_param=best_param)
 
-###############################################################
-################ 7)  Polynomial SVM Schedule  #################
-###############################################################
+# ============================================================
+# 8) Polynomial SVM 
+# ============================================================
 
 print("\n=== Polynomial SVM ===")
-# Define the SVM model
 C = 3
 degree = 3
 gamma = "scale"

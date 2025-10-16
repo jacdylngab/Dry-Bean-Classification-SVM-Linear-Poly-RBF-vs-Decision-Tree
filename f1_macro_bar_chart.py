@@ -10,12 +10,12 @@ df_melted = df.melt(id_vars="Model",
                     var_name="Results", 
                     value_name="F1_Score")
 
+# Create a bar plot comparing train vs test macro F1 scores for each model
 sns.barplot(data=df_melted, x="Model", y="F1_Score", hue="Results", palette=["gold", "green"])
+
 
 plt.title("Train vs Test Macro F1 Scores")
 plt.tight_layout()
-
 plt.legend(loc='lower left', title='Results')
-
 plt.savefig("F1_Macro_bar_chart.png")
 plt.show()
