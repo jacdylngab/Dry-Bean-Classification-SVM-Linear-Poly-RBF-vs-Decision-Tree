@@ -37,7 +37,7 @@ pip install -r requirements.txt
 Place the Dry_Bean_Dataset.xlsx in the same directory as the scripts
 ```
 
-4. Run schedulers (optional, slow):
+3. Run schedulers (optional, slow):
 ```bash
 python3 svm_scheduler.py
 ```
@@ -45,7 +45,7 @@ python3 svm_scheduler.py
 python3 decision_tree_scheduler.py
 ```
 
-4. Run final models (recommended, fast)
+3. Run final models (recommended, fast)
 ```bash
 python3 svm.py
 ```
