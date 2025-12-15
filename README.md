@@ -33,9 +33,11 @@ pip install -r requirements.txt
 ```
 
 2. Download the Dry Bean Dataset
-    Place the Dry_Bean_Dataset.xlsx in the same directory as the scripts
+```
+Place the Dry_Bean_Dataset.xlsx in the same directory as the scripts
+```
 
-3. Run schedulers (optional, slow):
+4. Run schedulers (optional, slow):
 ```bash
 python3 svm_scheduler.py
 ```
