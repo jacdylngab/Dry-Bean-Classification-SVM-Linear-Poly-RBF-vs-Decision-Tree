@@ -24,6 +24,7 @@ The project includes scripts for both hyperparameter tuning (schedulers) and fin
 |`f1_macro_bar_chart.py` | Plots the F1 macro test and F1 macro train bar charts |
 
 ---
+
 ## ▶️ How to Run
 
 How to Run
@@ -32,12 +33,11 @@ How to Run
 pip install -r requirements.txt
 ```
 
-2. Download the Dry Bean Dataset
-```
-Place the Dry_Bean_Dataset.xlsx in the same directory as the scripts
-```
+2. Download the Dry Bean Dataset<br>
+  Place the Dry_Bean_Dataset.xlsx in the same directory as the scripts
 
-3. Run schedulers (optional, slow):
+
+4. Run schedulers (optional, slow):
 ```bash
 python3 svm_scheduler.py
 ```
@@ -45,7 +45,7 @@ python3 svm_scheduler.py
 python3 decision_tree_scheduler.py
 ```
 
-3. Run final models (recommended, fast)
+4. Run final models (recommended, fast)
 ```bash
 python3 svm.py
 ```
