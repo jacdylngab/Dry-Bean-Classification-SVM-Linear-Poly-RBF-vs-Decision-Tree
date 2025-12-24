@@ -34,15 +34,17 @@ How to Run
 git clone https://github.com/jacdylngab/Dry-Bean-Classification-SVM-Linear-Poly-RBF-vs-Decision-Tree.git
 cd Dry-Bean-Classification-SVM-Linear-Poly-RBF-vs-Decision-Tree
 ```
-   
-2. Install dependencies:
+
+2. Create and activate a virtual environment:
+```
+python3 -m venv env
+source env/bin/activate    # On Windows use: env\Scripts\activate
+```
+
+3. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
-
-2. Download the Dry Bean Dataset<br>
-  Place the Dry_Bean_Dataset.xlsx in the same directory as the scripts
-
 
 4. Run schedulers (optional, slow):
 ```bash
@@ -52,7 +54,7 @@ python3 svm_scheduler.py
 python3 decision_tree_scheduler.py
 ```
 
-4. Run final models (recommended, fast)
+5. Run final models (recommended, fast)
 ```bash
 python3 svm.py
 ```
