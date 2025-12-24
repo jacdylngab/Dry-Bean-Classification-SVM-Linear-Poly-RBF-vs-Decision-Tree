@@ -27,8 +27,6 @@ The project includes scripts for both hyperparameter tuning (schedulers) and fin
 
 ## ▶️ How to Run
 
-How to Run
-
 1. Clone the repo and navigate to the project:
 ```bash
 git clone https://github.com/jacdylngab/Dry-Bean-Classification-SVM-Linear-Poly-RBF-vs-Decision-Tree.git
